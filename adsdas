@@ -1,0 +1,201 @@
+-- FULL BRAINROT VISUAL DUPE - OWN BASE DUPER (Fixed Detection)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+local Animals = require(ReplicatedStorage.Datas.Animals)
+local Rarities = require(ReplicatedStorage.Datas.Rarities)
+
+-- ==================== TRAIT & MUTATION MAPS ====================
+local traitMap = {
+    ["rbxassetid://89041930759464"] = {name = "Taco", mult = 2},
+    ["rbxassetid://104229924295526"] = {name = "Nyan", mult = 5},
+    ["rbxassetid://99181785766598"] = {name = "Galactic", mult = 3},
+    ["rbxassetid://121100427764858"] = {name = "Fireworks", mult = 5},
+    ["rbxassetid://110723387483939"] = {name = "Zombie", mult = 4},
+    ["rbxassetid://104964195846833"] = {name = "Claws", mult = 4},
+    ["rbxassetid://121332433272976"] = {name = "Glitched", mult = 4},
+    ["rbxassetid://100601425541874"] = {name = "Bubblegum", mult = 3},
+    ["rbxassetid://118283346037788"] = {name = "Fire", mult = 5},
+    ["rbxassetid://78474194088770"] = {name = "Wet", mult = 1.5},
+    ["rbxassetid://83627475909869"] = {name = "Snowy", mult = 2},
+    ["rbxassetid://127455440418221"] = {name = "Cometstruck", mult = 2.5},
+    ["rbxassetid://97725744252608"] = {name = "Explosive", mult = 3},
+    ["rbxassetid://82620342632406"] = {name = "Disco", mult = 4},
+    ["rbxassetid://134655415681926"] = {name = "10B", mult = 3},
+    ["rbxassetid://104985313532149"] = {name = "Shark Fin", mult = 3},
+    ["rbxassetid://115664804212096"] = {name = "Matteo Hat", mult = 3.5},
+    ["rbxassetid://75650816341229"] = {name = "Brazil", mult = 5},
+    ["rbxassetid://115001117876534"] = {name = "Sleepy", mult = 0},
+    ["rbxassetid://139729696247144"] = {name = "Lightning", mult = 5},
+    ["rbxassetid://110910518481052"] = {name = "UFO", mult = 2},
+    ["rbxassetid://117478971325696"] = {name = "Spider", mult = 3.5},
+    ["rbxassetid://84731118566493"] = {name = "Strawberry", mult = 7},
+    ["rbxassetid://119591742504251"] = {name = "Paint", mult = 5},
+    ["rbxassetid://89591838221335"] = {name = "Skeleton", mult = 3},
+    ["rbxassetid://95128039793845"] = {name = "Sombrero", mult = 4},
+    ["rbxassetid://103610037004911"] = {name = "Tie", mult = 3.75},
+    ["rbxassetid://123964048606874"] = {name = "Witch Hat", mult = 3},
+    ["rbxassetid://93350414974589"] = {name = "Indonesia", mult = 4},
+    ["rbxassetid://114748221761549"] = {name = "Meowl", mult = 6},
+    ["rbxassetid://123115843719383"] = {name = "RIP Gravestone", mult = 3.5},
+    ["rbxassetid://97054765273857"] = {name = "Jackolantern Pet", mult = 4.5},
+    ["rbxassetid://88375043733582"] = {name = "Santa Hat", mult = 4}
+}
+
+local mutationMap = {
+    ["Gold"] = {mult = 0.25, displayText = "Gold", richText = "<font color=\"#FFDE59\">Gold</font>", color = Color3.fromRGB(255, 222, 89)},
+    ["Diamond"] = {mult = 0.5, displayText = "Diamond", richText = "<font color=\"#25C4FE\">Diamond</font>", color = Color3.fromRGB(37, 196, 254)},
+    ["Bloodrot"] = {mult = 1, displayText = "Bloodrot", richText = "<font color=\"#8A3B3C\">Bloodrot</font>", color = Color3.fromRGB(145, 0, 27)},
+    ["Rainbow"] = {mult = 9, displayText = "Rainbow", richText = "<font color=\"#ff00fb\">Rainbow</font>", color = Color3.fromRGB(255, 0, 251)},
+    ["Candy"] = {mult = 3, displayText = "Candy", richText = "<font color=\"#ff46f6\">Candy</font>", color = Color3.fromRGB(255, 70, 246)},
+    ["Lava"] = {mult = 5, displayText = "Lava", richText = "<font color=\"#ff7700\">Lava</font>", color = Color3.fromRGB(255, 149, 0)},
+    ["Galaxy"] = {mult = 6, displayText = "Galaxy", richText = "<font color=\"#aa3cff\">Galaxy</font>", color = Color3.fromRGB(170, 60, 255)},
+    ["Yin Yang"] = {mult = 6.5, displayText = "Yin Yang", richText = "<stroke color=\"#fff\" thickness=\"2\"><font color=\"#000\">Yin</font></stroke> <stroke color=\"#000\" thickness=\"2\"><font color=\"#fff\">Yang</font></stroke>", useRichText = true},
+    ["YinYang"] = {mult = 6.5, displayText = "Yin Yang", richText = "<stroke color=\"#fff\" thickness=\"2\"><font color=\"#000\">Yin</font></stroke> <stroke color=\"#000\" thickness=\"2\"><font color=\"#fff\">Yang</font></stroke>", useRichText = true},
+    ["Radioactive"] = {mult = 7.5, displayText = "Radioactive", richText = "<font color=\"#68f500\">Radioactive</font>", color = Color3.fromRGB(104, 245, 0)}
+}
+
+local LocalPlayer = Players.LocalPlayer
+
+-- ==================== IMPROVED DETECTION ====================
+local function findOurPlot()
+    for _, plot in ipairs(Workspace.Plots:GetChildren()) do
+        local sign = plot:FindFirstChild("PlotSign")
+        if sign then
+            local gui = sign:FindFirstChild("SurfaceGui")
+            if gui then
+                local label = gui:FindFirstChild("Frame") and gui.Frame:FindFirstChild("TextLabel")
+                if label and (label.Text:find(LocalPlayer.Name) or label.Text:find(LocalPlayer.DisplayName)) then
+                    return plot
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function getOwnBrainrots()
+    local list = {}
+    local ourPlot = findOurPlot()
+    if not ourPlot then 
+        warn("Could not find your plot!")
+        return list 
+    end
+
+    -- Search in AnimalPodiums (most reliable place)
+    local podiums = ourPlot:FindFirstChild("AnimalPodiums")
+    if podiums then
+        for _, podium in ipairs(podiums:GetChildren()) do
+            for _, obj in ipairs(podium:GetDescendants()) do
+                if obj:IsA("Model") and Animals[obj.Name] and obj.PrimaryPart then
+                    
+                    -- Find overhead
+                    local overhead = obj:FindFirstChild("AnimalOverhead", true) 
+                                  or obj.PrimaryPart:FindFirstChild("AnimalOverhead")
+                                  or obj:FindFirstChildWhichIsA("BillboardGui")
+
+                    if overhead then
+                        local nameLbl = overhead:FindFirstChild("DisplayName")
+                        local genLbl = overhead:FindFirstChild("Generation")
+
+                        if nameLbl and genLbl then
+                            table.insert(list, {
+                                name = nameLbl.Text,
+                                genText = genLbl.Text,
+                                genValue = tonumber(genLbl.Text:match("%d+%.?%d*")) or 0,
+                                model = obj,
+                                overhead = overhead,
+                                animalName = obj.Name
+                            })
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Backup search in Debris (sometimes overheads are there)
+    local debris = Workspace:FindFirstChild("Debris")
+    if debris then
+        for _, temp in ipairs(debris:GetChildren()) do
+            if temp.Name == "FastOverheadTemplate" then
+                local oh = temp:FindFirstChild("AnimalOverhead")
+                if oh then
+                    local nameLbl = oh:FindFirstChild("DisplayName")
+                    if nameLbl then
+                        local animalModel = nil
+                        -- Try to find linked animal
+                        for _, plot in ipairs(ourPlot:GetDescendants()) do
+                            if plot:IsA("Model") and plot.Name == nameLbl.Text or Animals[plot.Name] then
+                                animalModel = plot
+                                break
+                            end
+                        end
+                        if animalModel then
+                            table.insert(list, {
+                                name = nameLbl.Text,
+                                genText = "Unknown",
+                                genValue = 0,
+                                model = animalModel,
+                                overhead = oh,
+                                animalName = animalModel.Name
+                            })
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Remove duplicates
+    local unique = {}
+    for _, v in ipairs(list) do
+        if not unique[v.model] then
+            unique[v.model] = v
+            table.insert(list, v) -- wait, better way:
+        end
+    end
+    list = {}
+    for _, v in pairs(unique) do table.insert(list, v) end
+
+    table.sort(list, function(a,b) return a.genValue > b.genValue end)
+    return list
+end
+
+-- ==================== REST OF THE SCRIPT (Helpers + spawnAnimal + GUI) ====================
+
+local function formatNumber(num)
+    local suffixes = {"", "K", "M", "B", "T", "Q"}
+    local tier = 1
+    while num >= 1000 and tier < #suffixes do
+        num /= 1000
+        tier += 1
+    end
+    return string.format(num % 1 == 0 and "%d%s" or "%.1f%s", num, suffixes[tier])
+end
+
+local function getTraitsFromOverhead(overhead)
+    local traits = {}
+    local container = overhead:FindFirstChild("Traits", true)
+    if container then
+        for _, icon in ipairs(container:GetChildren()) do
+            if icon:IsA("ImageLabel") and traitMap[icon.Image] then
+                table.insert(traits, traitMap[icon.Image].name)
+            end
+        end
+    end
+    return traits
+end
+
+local function getMutationFromOverhead(overhead)
+    local mutLabel = overhead:FindFirstChild("Mutation", true)
+    if mutLabel and mutLabel.Visible then
+        local text = mutLabel.Text:gsub("<[^>]+>", ""):gsub("^%s*(.-)%s*$", "%1")
+        for name in pairs(mutationMap) do
+            if text:find(name) then return name end
+        end
+    end
+    return "None"
+end
